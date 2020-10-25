@@ -2,7 +2,7 @@
 // compatible API routes.
 
 var express = require('express');
-const { default: ParseServer, ParseGraphQLServer } = require('parse-server');
+var ParseServer = require('parse-server').ParseServer;
 var path = require('path');
 
 var databaseUri = process.env.DATABASE_URI || process.env.MONGODB_URI;
@@ -17,18 +17,12 @@ var api = new ParseServer({
   appId: process.env.APP_ID || 'myAppId',
   masterKey: process.env.MASTER_KEY || '', //Add your master key here. Keep it secret!
   serverURL: process.env.SERVER_URL || 'http://localhost:1337/parse',  // Don't forget to change to https if needed
+  mountGraphQL: true,
+  mountPlayground: false,
   liveQuery: {
     classNames: ["Posts", "Comments"] // List of classes to support for query subscriptions
   }
 });
-
-const parseGraphQLServer = new ParseGraphQLServer(
-    api,
-    {
-      graphQLPath: '/graphql',
-      playgroundPath: '/playground'
-    }
-);
 
 var app = express();
 
@@ -38,11 +32,6 @@ app.use('/public', express.static(path.join(__dirname, '/public')));
 // Serve the Parse API on the /parse URL prefix
 var mountPath = process.env.PARSE_MOUNT || '/parse';
 app.use(mountPath, api);
-
-// Serve the GraphQL API
-parseGraphQLServer.applyGraphQL(app); // Mounts the GraphQL API
-// parseGraphQLServer.applyPlayground(app); // (Optional) Mounts the GraphQL Playground - do NOT use in Production
-
 
 // Parse Server plays nicely with the rest of your web routes
 app.get('/', function(req, res) {
@@ -59,7 +48,6 @@ var port = process.env.PORT || 1337;
 var httpServer = require('http').createServer(app);
 httpServer.listen(port, function() {
     console.log('parse-server-example running on port ' + port + '.');
-    console.log('parse-server-example  GraphQL API running on port ' + port +'/graphql');
 });
 
 // This will enable the Live Query real-time server
